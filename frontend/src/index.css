@@ -1,0 +1,28 @@
+/**
+ * Base Styles - Responsive Layout
+ * 
+ * This file provides minimal base resets.
+ * Main styling is in globals.css
+ */
+
+/* Ensure root element fills viewport */
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Responsive images */
+img, video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Prevent horizontal overflow on small screens */
+body {
+  overflow-x: hidden;
+}
