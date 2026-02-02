@@ -1,0 +1,304 @@
+NIGHTINGALE AI - THIRD-PARTY ATTRIBUTIONS AND LICENSES
+======================================================
+
+This document lists all external libraries, models, and services used in the Nightingale AI project,
+along with their respective licenses and copyright information.
+
+Last Updated: February 2, 2026
+
+===============================================================================
+AI MODELS & SERVICES
+===============================================================================
+
+1. Groq API & Llama 3.3-70b-versatile
+   Provider: Groq, Inc.
+   Model: Meta Llama 3.3 70B Versatile
+   License: Llama 3 Community License
+   Usage: Primary conversational AI for patient intake, risk assessment, and fact extraction
+   Website: https://groq.com
+   Model Info: https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct
+
+2. Groq Whisper Large v3
+   Provider: Groq, Inc.
+   Model: OpenAI Whisper Large v3 (via Groq)
+   License: MIT License (Whisper model)
+   Usage: Speech-to-text transcription for voice messages
+   Website: https://groq.com
+   Original: https://github.com/openai/whisper
+
+===============================================================================
+BACKEND DEPENDENCIES (Node.js/TypeScript)
+===============================================================================
+
+Runtime Dependencies:
+---------------------
+
+1. Express (v5.2.1)
+   License: MIT
+   Copyright: (c) 2009-2014 TJ Holowaychuk, (c) 2013-2014 Roman Shtylman, (c) 2014-2015 Douglas Christopher Wilson
+   Purpose: Web framework for REST API
+   Repository: https://github.com/expressjs/express
+
+2. groq-sdk (v0.37.0)
+   License: Apache-2.0
+   Copyright: (c) Groq, Inc.
+   Purpose: Official Groq API client for AI inference
+   Repository: https://github.com/groq/groq-typescript
+
+3. pg (PostgreSQL client) (v8.18.0)
+   License: MIT
+   Copyright: (c) 2010-2024 Brian Carlson
+   Purpose: PostgreSQL database driver
+   Repository: https://github.com/brianc/node-postgres
+
+4. bcryptjs (v3.0.3)
+   License: MIT
+   Copyright: (c) 2012 Nevins Bartolomeo, (c) 2012 Shane Girish, (c) 2014 Daniel Wirtz
+   Purpose: Password hashing for user authentication
+   Repository: https://github.com/dcodeIO/bcrypt.js
+
+5. jsonwebtoken (v9.0.3)
+   License: MIT
+   Copyright: (c) 2015 Auth0, Inc.
+   Purpose: JWT token generation and verification
+   Repository: https://github.com/auth0/node-jsonwebtoken
+
+6. dotenv (v17.2.3)
+   License: BSD-2-Clause
+   Copyright: (c) 2015, Scott Motte
+   Purpose: Environment variable management
+   Repository: https://github.com/motdotla/dotenv
+
+7. cors (v2.8.6)
+   License: MIT
+   Copyright: (c) 2013 Troy Goode
+   Purpose: Cross-Origin Resource Sharing middleware
+   Repository: https://github.com/expressjs/cors
+
+8. helmet (v8.1.0)
+   License: MIT
+   Copyright: (c) 2024 Evan Hahn
+   Purpose: Security headers middleware
+   Repository: https://github.com/helmetjs/helmet
+
+9. uuid (v13.0.0)
+   License: MIT
+   Copyright: (c) 2010-2024 Robert Kieffer and other contributors
+   Purpose: UUID generation for database IDs
+   Repository: https://github.com/uuidjs/uuid
+
+10. multer (v2.0.2)
+    License: MIT
+    Copyright: (c) 2014 Hage Yaapa
+    Purpose: Multipart/form-data handling for file uploads
+    Repository: https://github.com/expressjs/multer
+
+11. gtts (Google Text-to-Speech) (v0.2.1)
+    License: MIT
+    Copyright: (c) 2015 Zach Schrater
+    Purpose: Text-to-speech synthesis for voice responses
+    Repository: https://github.com/zlargon/google-tts
+
+Development Dependencies:
+-------------------------
+
+12. TypeScript (v5.9.3)
+    License: Apache-2.0
+    Copyright: (c) Microsoft Corporation
+    Purpose: Static type checking and compilation
+    Repository: https://github.com/microsoft/TypeScript
+
+13. ts-node (v10.9.2)
+    License: MIT
+    Copyright: (c) 2014 Blake Embrey
+    Purpose: TypeScript execution for Node.js
+    Repository: https://github.com/TypeStrong/ts-node
+
+14. nodemon (v3.1.11)
+    License: MIT
+    Copyright: (c) 2010 - 2024 Remy Sharp
+    Purpose: Development server with auto-restart
+    Repository: https://github.com/remy/nodemon
+
+15. @types/* packages
+    License: MIT
+    Copyright: (c) Microsoft Corporation and contributors
+    Purpose: TypeScript type definitions
+    Repository: https://github.com/DefinitelyTyped/DefinitelyTyped
+
+===============================================================================
+FRONTEND DEPENDENCIES (React/TypeScript)
+===============================================================================
+
+Runtime Dependencies:
+---------------------
+
+16. React (v19.2.0)
+    License: MIT
+    Copyright: (c) Meta Platforms, Inc. and affiliates
+    Purpose: UI library
+    Repository: https://github.com/facebook/react
+
+17. React DOM (v19.2.0)
+    License: MIT
+    Copyright: (c) Meta Platforms, Inc. and affiliates
+    Purpose: React rendering for web
+    Repository: https://github.com/facebook/react
+
+18. React Router DOM (v7.13.0)
+    License: MIT
+    Copyright: (c) Remix Software Inc.
+    Purpose: Client-side routing
+    Repository: https://github.com/remix-run/react-router
+
+19. axios (v1.13.4)
+    License: MIT
+    Copyright: (c) 2014-present Matt Zabriskie
+    Purpose: HTTP client for API requests
+    Repository: https://github.com/axios/axios
+
+20. lucide-react (v0.563.0)
+    License: ISC
+    Copyright: (c) Lucide Contributors
+    Purpose: Icon library
+    Repository: https://github.com/lucide-icons/lucide
+
+Development Dependencies:
+-------------------------
+
+21. Vite (v7.2.4)
+    License: MIT
+    Copyright: (c) 2019-present Evan You and Vite contributors
+    Purpose: Frontend build tool and dev server
+    Repository: https://github.com/vitejs/vite
+
+22. Tailwind CSS (v4.1.18)
+    License: MIT
+    Copyright: (c) Tailwind Labs, Inc.
+    Purpose: Utility-first CSS framework
+    Repository: https://github.com/tailwindlabs/tailwindcss
+
+23. PostCSS (v8.5.6)
+    License: MIT
+    Copyright: (c) 2013 Andrey Sitnik
+    Purpose: CSS transformation tool
+    Repository: https://github.com/postcss/postcss
+
+24. autoprefixer (v10.4.24)
+    License: MIT
+    Copyright: (c) 2013 Andrey Sitnik
+    Purpose: CSS vendor prefix automation
+    Repository: https://github.com/postcss/autoprefixer
+
+25. ESLint (v9.39.1)
+    License: MIT
+    Copyright: (c) OpenJS Foundation and contributors
+    Purpose: JavaScript/TypeScript linting
+    Repository: https://github.com/eslint/eslint
+
+26. @vitejs/plugin-react (v5.1.1)
+    License: MIT
+    Copyright: (c) 2019-present Evan You and Vite contributors
+    Purpose: React integration for Vite
+    Repository: https://github.com/vitejs/vite-plugin-react
+
+===============================================================================
+TESTING DEPENDENCIES (Python)
+===============================================================================
+
+27. pytest
+    License: MIT
+    Copyright: (c) 2004 Holger Krekel and others
+    Purpose: Testing framework for integration tests
+    Repository: https://github.com/pytest-dev/pytest
+
+28. requests
+    License: Apache-2.0
+    Copyright: (c) 2019 Kenneth Reitz
+    Purpose: HTTP library for API testing
+    Repository: https://github.com/psf/requests
+
+===============================================================================
+DATABASE
+===============================================================================
+
+29. PostgreSQL (v14+)
+    License: PostgreSQL License (similar to BSD/MIT)
+    Copyright: (c) 1996-2024, The PostgreSQL Global Development Group
+    Purpose: Primary relational database
+    Website: https://www.postgresql.org
+
+===============================================================================
+CRYPTOGRAPHY & SECURITY
+===============================================================================
+
+30. Node.js Crypto Module (Built-in)
+    License: MIT (Node.js)
+    Copyright: (c) Node.js contributors
+    Purpose: AES-256-GCM encryption for PHI at rest
+    Documentation: https://nodejs.org/api/crypto.html
+
+===============================================================================
+LICENSE SUMMARIES
+===============================================================================
+
+MIT License:
+Most permissive license used in this project. Allows commercial use, modification,
+distribution, and private use with minimal restrictions.
+
+Apache-2.0:
+Permissive license similar to MIT but provides explicit patent grant.
+
+BSD-2-Clause:
+Similar to MIT with explicit clause about redistributions.
+
+ISC License:
+Functionally equivalent to MIT but with simpler wording.
+
+PostgreSQL License:
+Very liberal license similar to BSD/MIT.
+
+Llama 3 Community License:
+Permits commercial use with certain restrictions. See:
+https://llama.meta.com/llama3/license/
+
+===============================================================================
+ATTRIBUTION REQUIREMENTS
+===============================================================================
+
+This project complies with all license requirements by:
+
+1. Preserving original copyright notices in source code
+2. Including this attribution file in distributions
+3. Not misrepresenting the origin of third-party code
+4. Providing appropriate credit to all contributors
+
+For specific license texts, refer to:
+- Backend: node_modules/[package]/LICENSE
+- Frontend: node_modules/[package]/LICENSE
+- Project root: LICENSE (project license)
+
+===============================================================================
+CONTACT
+===============================================================================
+
+For questions about attributions or licensing:
+- Review individual package LICENSE files in node_modules/
+- Consult official package repositories listed above
+- Refer to project documentation at README.md
+
+===============================================================================
+DISCLAIMER
+===============================================================================
+
+This attribution file is provided as-is for informational purposes. License
+information is subject to change by package maintainers. Always verify current
+license status from official package sources.
+
+Nightingale AI respects intellectual property rights and strives to comply with
+all open-source licenses. If you believe any attribution is missing or incorrect,
+please contact the project maintainers.
+
+===============================================================================
+END OF ATTRIBUTION
+===============================================================================
