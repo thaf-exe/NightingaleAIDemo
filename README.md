@@ -26,7 +26,7 @@ A HIPAA-ready healthcare messaging platform with AI-powered triage, living memor
 ### 1. Clone Repository
 
 ```bash
-git clone [<repository-url>](https://github.com/thaf-exe/NightingaleAIDemo.git)
+git clone https://github.com/thaf-exe/NightingaleAIDemo.git
 cd NightingaleAIDemo
 ```
 
