@@ -46,6 +46,12 @@ export interface Message {
   ai_citations?: Record<string, unknown>; // What the AI cited (e.g., their health profile, previous messages)
   ai_includes_clinician_nudge?: boolean; // Whether response includes "consult your clinician" guidance
   
+  // Voice readiness fields (for future audio integration)
+  audio_id?: string; // Reference to audio file in storage (S3, Azure Blob, etc.)
+  audio_transcript?: string; // Transcription of the audio message
+  audio_duration_seconds?: number; // Duration of audio in seconds
+  is_voice_message?: boolean; // Whether this message originated from voice input
+  
   created_at: Date;
 }
 
@@ -63,11 +69,18 @@ export interface MessageRow {
   risk_confidence: ConfidenceLevel | null;
   risk_assessed_at: Date | null;
   ai_confidence: ConfidenceLevel | null;
-  ai_citations: Record<string, unknown> | null;
+  ai_citations: string | Record<string, unknown> | null; // JSONB as string or object
   ai_includes_clinician_nudge: boolean | null;
+
+  // Voice readiness fields
+  audio_id: string | null;
+  audio_transcript: string | null;
+  audio_duration_seconds: number | null;
+  is_voice_message: boolean;
+  
   created_at: Date;
 }
-
+  
 /**
  * Request to send a new message
  */
@@ -130,4 +143,5 @@ export interface ChatContext {
   recent_messages: Array<{
     role: 'user' | 'assistant' | 'system';
     content: string;
-  }>;  knownNames?: string[]; // Names to redact before sending to LLM (for PHI protection)}
+  }>;  knownNames?: string[]; // Names to redact before sending to LLM (for PHI protection)
+}

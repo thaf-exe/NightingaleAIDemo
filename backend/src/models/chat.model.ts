@@ -134,6 +134,11 @@ export async function createMessage(
     riskConfidence?: ConfidenceLevel;
     aiConfidence?: ConfidenceLevel;
     aiCitations?: Record<string, unknown>;
+    // Voice readiness fields
+    audioId?: string;
+    audioTranscript?: string;
+    audioDurationSeconds?: number;
+    isVoiceMessage?: boolean;
   }
 ): Promise<Message> {
   // Encrypt the message content
@@ -143,9 +148,10 @@ export async function createMessage(
     `INSERT INTO messages (
       conversation_id, sender_type, sender_id, content_encrypted,
       risk_level, risk_reason, risk_confidence, risk_assessed_at,
-      ai_confidence, ai_citations
+      ai_confidence, ai_citations,
+      audio_id, audio_transcript, audio_duration_seconds, is_voice_message
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     RETURNING *`,
     [
       conversationId,
@@ -158,6 +164,10 @@ export async function createMessage(
       options?.riskLevel ? new Date() : null,
       options?.aiConfidence || null,
       options?.aiCitations ? JSON.stringify(options.aiCitations) : null,
+      options?.audioId || null,
+      options?.audioTranscript || null,
+      options?.audioDurationSeconds || null,
+      options?.isVoiceMessage || false,
     ]
   );
   
@@ -214,6 +224,29 @@ export async function getRecentMessages(
 }
 
 /**
+ * Helper to parse ai_citations from db
+ */
+function parseAiCitations(value: MessageRow["ai_citations"]): Record<string, unknown> | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value) as Record<string, unknown>;
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (typeof value === "object") {
+    return value as Record<string, unknown>;
+  }
+
+  return undefined;
+}
+
+/**
  * Helper to decrypt a message row
  */
 function decryptMessage(row: MessageRow): Message {
@@ -228,7 +261,12 @@ function decryptMessage(row: MessageRow): Message {
     risk_confidence: row.risk_confidence || undefined,
     risk_assessed_at: row.risk_assessed_at || undefined,
     ai_confidence: row.ai_confidence || undefined,
-    ai_citations: row.ai_citations || undefined,
+    ai_citations: parseAiCitations(row.ai_citations),
+    // Voice readiness fields
+    audio_id: row.audio_id || undefined,
+    audio_transcript: row.audio_transcript || undefined,
+    audio_duration_seconds: row.audio_duration_seconds || undefined,
+    is_voice_message: row.is_voice_message || undefined,
     created_at: row.created_at,
   };
 }
@@ -263,6 +301,18 @@ export async function addToPatientMemory(
   messageId: string
 ): Promise<PatientMemory[]> {
   const affectedMemories: PatientMemory[] = [];
+
+  const normalizeStatus = (status?: string): 'active' | 'stopped' | 'resolved' | 'corrected' => {
+    if (!status) return 'active';
+    const normalized = status.toLowerCase();
+    if (normalized === 'active') return 'active';
+    if (normalized === 'stopped') return 'stopped';
+    if (normalized === 'resolved') return 'resolved';
+    if (normalized === 'corrected') return 'corrected';
+    if (normalized === 'ongoing') return 'active';
+    if (normalized === 'current') return 'active';
+    return 'active';
+  };
   
   for (const fact of facts) {
     const action = fact.action || 'add';
@@ -300,7 +350,7 @@ export async function addToPatientMemory(
              WHERE id = $1
              RETURNING id, user_id as patient_id, memory_type, value, status, timeline,
                        provenance_message_id, provenance_timestamp, created_at, updated_at`,
-            [memoryId, fact.status || 'stopped', fact.timeline]
+            [memoryId, normalizeStatus(fact.status || 'stopped'), fact.timeline]
           );
           if (result.rows[0]) affectedMemories.push(result.rows[0]);
         }
@@ -327,7 +377,7 @@ export async function addToPatientMemory(
             patientId,
             fact.type,
             fact.value,
-            fact.status || 'active',
+            normalizeStatus(fact.status),
             fact.timeline || null,
             messageId,
           ]
