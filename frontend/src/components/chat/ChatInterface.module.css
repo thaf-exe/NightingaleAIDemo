@@ -1,0 +1,543 @@
+/* Chat Interface Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+/* Messages Area */
+.messagesContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+/* Welcome Message */
+.welcomeMessage {
+  text-align: center;
+  padding: var(--spacing-8) var(--spacing-4);
+  color: var(--color-gray-600);
+}
+
+/* Loading History */
+.loadingHistory {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  color: var(--color-gray-500);
+  gap: var(--spacing-3);
+}
+
+.loadingHistory .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.welcomeMessage h3 {
+  font-size: var(--font-size-xl);
+  color: var(--color-gray-800);
+  margin-bottom: var(--spacing-4);
+}
+
+.welcomeMessage p {
+  margin-bottom: var(--spacing-3);
+  line-height: 1.6;
+}
+
+.disclaimer {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+/* Message Bubbles */
+.message {
+  max-width: 80%;
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-lg);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.userMessage {
+  align-self: flex-end;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  color: var(--color-white);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.aiMessage {
+  align-self: flex-start;
+  background: var(--color-gray-100);
+  color: var(--color-gray-800);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.messageContent {
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.messageTime {
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+  margin-top: var(--spacing-1);
+  text-align: right;
+}
+
+/* Highlighted message (when scrolled to from health profile) */
+.highlighted {
+  animation: highlightPulse 2s ease-out;
+}
+
+@keyframes highlightPulse {
+  0%, 100% { box-shadow: none; }
+  20%, 80% { box-shadow: 0 0 0 3px var(--color-primary-light), 0 0 12px var(--color-primary); }
+}
+
+/* Risk Level Indicators */
+.riskMedium {
+  border-left: 3px solid var(--color-warning);
+}
+
+.riskHigh {
+  border-left: 3px solid var(--color-error);
+  background: linear-gradient(135deg, #fef2f2, #fee2e2) !important;
+}
+
+/* Typing Indicator */
+.typing {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-gray-500);
+  font-size: var(--font-size-sm);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Warning Banner */
+.warning {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: var(--color-warning);
+  color: var(--color-white);
+}
+
+.warninghigh {
+  background: var(--color-error);
+}
+
+.warning p {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
+.warningClose {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.warningClose:hover {
+  opacity: 1;
+}
+
+/* Error Message */
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: #fef2f2;
+  color: var(--color-error);
+  border-top: 1px solid #fecaca;
+}
+
+.error p {
+  flex: 1;
+  font-size: var(--font-size-sm);
+}
+
+.error button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: var(--font-size-xl);
+  cursor: pointer;
+}
+
+/* Input Area */
+.inputContainer {
+  display: flex;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-top: 1px solid var(--color-gray-200);
+  background: var(--color-gray-50);
+}
+
+.inputContainer.inputDisabled {
+  background: var(--color-gray-100);
+}
+
+.inputContainer.inputDisabled .input {
+  background: var(--color-gray-200);
+  color: var(--color-gray-500);
+}
+
+.input {
+  flex: 1;
+  padding: var(--spacing-3) var(--spacing-4);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-base);
+  resize: none;
+  min-height: 44px;
+  max-height: 150px;
+  line-height: 1.5;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+.input:disabled {
+  background: var(--color-gray-100);
+  cursor: not-allowed;
+}
+
+.input::placeholder {
+  color: var(--color-gray-400);
+}
+
+.sendButton {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+}
+
+.sendButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Clinician Message Styling */
+.clinicianMessage {
+  align-self: flex-start;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  color: var(--color-gray-800);
+  border-bottom-left-radius: var(--radius-sm);
+  border: 1px solid var(--color-success-light);
+}
+
+.clinicianBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-success);
+  margin-bottom: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* Escalation Prompt */
+.escalationPrompt {
+  margin: 0 var(--spacing-4) var(--spacing-4);
+  padding: var(--spacing-4);
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-lg);
+  animation: slideUp 0.3s ease;
+}
+
+.escalationPrompt.warninghigh {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  border-color: var(--color-error);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.escalationContent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-4);
+}
+
+.escalationContent svg {
+  color: var(--color-warning);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.warninghigh .escalationContent svg {
+  color: var(--color-error);
+}
+
+.escalationText {
+  flex: 1;
+}
+
+.escalationText strong {
+  display: block;
+  margin-bottom: var(--spacing-1);
+  color: var(--color-gray-800);
+}
+
+.escalationText p {
+  margin: 0;
+  color: var(--color-gray-700);
+  font-size: var(--font-size-sm);
+}
+
+.escalationActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+}
+
+.escalateButton {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-weight: 600;
+}
+
+.dismissButton {
+  background: none;
+  border: none;
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-md);
+  transition: background 0.15s ease;
+}
+
+.dismissButton:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* Escalation Status Banner */
+.escalationStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  border-top: 1px solid var(--color-success-light);
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.escalationStatus svg {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .message {
+    max-width: 90%;
+  }
+  
+  .inputContainer {
+    padding: var(--spacing-3);
+  }
+  
+  .escalationActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+/* Voice Mode Styles */
+.voiceModeBar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: var(--color-gray-100);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.voiceModeToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-gray-200);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.voiceModeToggle:hover {
+  background: var(--color-gray-300);
+}
+
+.voiceModeToggle.active {
+  background: var(--color-primary);
+  color: white;
+}
+
+.autoSpeakToggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-600);
+  cursor: pointer;
+}
+
+.autoSpeakToggle input {
+  cursor: pointer;
+}
+
+.stopSpeaking {
+  padding: var(--spacing-2) var(--spacing-3);
+  background: var(--color-amber-100);
+  border: 1px solid var(--color-amber-300);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-amber-800);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.stopSpeaking:hover {
+  background: var(--color-amber-200);
+}
+
+/* Listening Indicator */
+.listeningIndicator {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-2) var(--spacing-4);
+  background: linear-gradient(90deg, var(--color-primary-50), var(--color-primary-100));
+  border-top: 1px solid var(--color-primary-200);
+  font-size: var(--font-size-sm);
+  color: var(--color-primary-700);
+}
+
+.listeningPulse {
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.7;
+  }
+}
+
+/* Voice Button */
+.voiceButton {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.voiceButton:hover:not(:disabled) {
+  background: var(--color-gray-200);
+  border-color: var(--color-gray-400);
+}
+
+.voiceButton.listening {
+  background: var(--color-red-500);
+  border-color: var(--color-red-600);
+  color: white;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.voiceButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

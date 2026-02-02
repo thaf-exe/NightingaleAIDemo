@@ -22,6 +22,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginForm, RegisterForm } from './components/auth';
 import { LandingPage, AuthPage, PatientDashboard, ClinicianDashboard } from './pages';
+import { TriageQueuePage } from './pages/TriageQueue';
 import './styles/globals.css';
 
 /**
@@ -95,8 +96,9 @@ function DashboardRouter() {
   const { user } = useAuth();
   
   // Route to appropriate dashboard based on role
+  // Clinicians get the Triage Queue as their main view
   if (user?.role === 'clinician') {
-    return <ClinicianDashboard />;
+    return <TriageQueuePage />;
   }
   
   return <PatientDashboard />;

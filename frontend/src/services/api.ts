@@ -144,4 +144,250 @@ export async function healthCheck(): Promise<boolean> {
   }
 }
 
+// ==================
+// CHAT API CALLS
+// ==================
+
+import type { 
+  ChatResponse, 
+  Conversation, 
+  Message, 
+  PatientMemoryResponse 
+} from '../types';
+
+/**
+ * Send a chat message and get AI response
+ */
+export async function sendMessage(
+  content: string, 
+  conversationId?: string
+): Promise<ChatResponse> {
+  const response = await api.post<ApiResponse<ChatResponse>>('/chat/message', {
+    content,
+    conversation_id: conversationId,
+  });
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to send message');
+  }
+  return response.data.data;
+}
+
+/**
+ * Get all conversations for current user
+ */
+export async function getConversations(): Promise<Conversation[]> {
+  const response = await api.get<ApiResponse<Conversation[]>>('/chat/conversations');
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to fetch conversations');
+  }
+  return response.data.data;
+}
+
+/**
+ * Get the active conversation with messages (if any)
+ */
+export async function getActiveConversation(): Promise<{
+  conversation: Conversation;
+  messages: Message[];
+} | null> {
+  const response = await api.get<ApiResponse<{
+    conversation: Conversation;
+    messages: Message[];
+  } | null>>('/chat/conversations/active');
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to fetch active conversation');
+  }
+  return response.data.data || null;
+}
+
+/**
+ * Get a specific conversation with messages
+ */
+export async function getConversation(id: string): Promise<{
+  conversation: Conversation;
+  messages: Message[];
+}> {
+  const response = await api.get<ApiResponse<{
+    conversation: Conversation;
+    messages: Message[];
+  }>>(`/chat/conversations/${id}`);
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to fetch conversation');
+  }
+  return response.data.data;
+}
+
+/**
+ * Start a new conversation
+ */
+export async function startNewConversation(): Promise<Conversation> {
+  const response = await api.post<ApiResponse<Conversation>>('/chat/conversations/new');
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to create conversation');
+  }
+  return response.data.data;
+}
+
+/**
+ * Close a conversation
+ */
+export async function closeConversation(id: string): Promise<Conversation> {
+  const response = await api.post<ApiResponse<Conversation>>(`/chat/conversations/${id}/close`);
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to close conversation');
+  }
+  return response.data.data;
+}
+
+/**
+ * Delete a conversation
+ */
+export async function deleteConversation(id: string): Promise<void> {
+  try {
+    const response = await api.delete<ApiResponse<{ deleted: boolean }>>(`/chat/conversations/${id}`);
+    if (!response.data.success) {
+      throw new Error(response.data.error?.message || 'Failed to delete conversation');
+    }
+  } catch (error: any) {
+    // Extract the error message from the API response
+    const message = error.response?.data?.error?.message || 'Failed to delete conversation';
+    throw new Error(message);
+  }
+}
+
+/**
+ * Get patient's health memory/profile
+ */
+export async function getPatientMemory(): Promise<PatientMemoryResponse> {
+  const response = await api.get<ApiResponse<PatientMemoryResponse>>('/chat/memory');
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to fetch health profile');
+  }
+  return response.data.data;
+}
+
+// =============================================
+// ESCALATION API
+// =============================================
+
+import type { 
+  EscalationCreateResponse, 
+  TriageQueueItem, 
+  EscalationDetails,
+  ClinicianReplyResponse,
+  Escalation 
+} from '../types';
+
+/**
+ * Create escalation - "Send to Nurse/Clinic"
+ */
+export async function createEscalation(
+  conversationId: string,
+  triggeringMessageId?: string
+): Promise<EscalationCreateResponse> {
+  const response = await api.post<ApiResponse<EscalationCreateResponse>>('/escalations', {
+    conversation_id: conversationId,
+    triggering_message_id: triggeringMessageId,
+  });
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to escalate');
+  }
+  return response.data.data;
+}
+
+/**
+ * Get escalation status for a conversation
+ */
+export async function getEscalationStatus(conversationId: string): Promise<Escalation | null> {
+  const response = await api.get<ApiResponse<Escalation | null>>(`/escalations/conversation/${conversationId}`);
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to get escalation status');
+  }
+  return response.data.data || null;
+}
+
+/**
+ * Poll for clinician replies (async update)
+ */
+export async function pollClinicianReplies(
+  conversationId: string,
+  since?: string
+): Promise<ClinicianReplyResponse> {
+  const params = since ? `?since=${encodeURIComponent(since)}` : '';
+  const response = await api.get<ApiResponse<ClinicianReplyResponse>>(
+    `/escalations/replies/${conversationId}${params}`
+  );
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to poll replies');
+  }
+  return response.data.data;
+}
+
+/**
+ * Get triage queue (clinician only)
+ */
+export async function getTriageQueue(): Promise<TriageQueueItem[]> {
+  const response = await api.get<ApiResponse<TriageQueueItem[]>>('/escalations/queue');
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to fetch triage queue');
+  }
+  return response.data.data;
+}
+
+/**
+ * Get escalation details (clinician only)
+ */
+export async function getEscalationDetails(escalationId: string): Promise<EscalationDetails> {
+  const response = await api.get<ApiResponse<EscalationDetails>>(`/escalations/${escalationId}`);
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to fetch escalation details');
+  }
+  return response.data.data;
+}
+
+/**
+ * Send clinician reply
+ */
+export async function sendClinicianReply(
+  escalationId: string,
+  content: string
+): Promise<{ message_id: string; sent_at: string }> {
+  const response = await api.post<ApiResponse<{ message_id: string; sent_at: string }>>(
+    `/escalations/${escalationId}/reply`,
+    { content }
+  );
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to send reply');
+  }
+  return response.data.data;
+}
+
+/**
+ * Update escalation status (clinician only)
+ */
+export async function updateEscalationStatus(
+  escalationId: string,
+  status: 'viewed' | 'in_progress' | 'resolved'
+): Promise<void> {
+  const response = await api.patch<ApiResponse<unknown>>(`/escalations/${escalationId}/status`, { status });
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to update status');
+  }
+}
+
+/**
+ * Resolve escalation (clinician only)
+ */
+export async function resolveEscalation(
+  escalationId: string,
+  resolutionNotes?: string
+): Promise<void> {
+  const response = await api.post<ApiResponse<unknown>>(`/escalations/${escalationId}/resolve`, {
+    resolution_notes: resolutionNotes,
+  });
+  if (!response.data.success) {
+    throw new Error(response.data.error?.message || 'Failed to resolve escalation');
+  }
+}
+
 export default api;

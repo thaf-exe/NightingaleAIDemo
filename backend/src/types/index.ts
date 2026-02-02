@@ -1,6 +1,7 @@
 // Re-export all types from a single entry point
 export * from './user.types';
 export * from './audit.types';
+export * from './chat.types';
 
 /**
  * Standard API response wrapper

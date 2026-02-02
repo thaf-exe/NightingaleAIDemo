@@ -1,7 +1,56 @@
+.floatingSidebarToggle {
+  position: fixed;
+  left: 24px;
+  bottom: 32px;
+  z-index: 30;
+  background: var(--color-white);
+  color: var(--color-gray-600);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.floatingSidebarToggle:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.floatingRightPanelToggle {
+  position: fixed;
+  right: 24px;
+  bottom: 32px;
+  z-index: 30;
+  background: var(--color-white);
+  color: var(--color-gray-600);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.floatingRightPanelToggle:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 /* Dashboard Styles */
 
 .container {
   min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: var(--color-gray-50);
 }
 
@@ -9,10 +58,49 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-4) var(--spacing-8);
+  padding: var(--spacing-3) var(--spacing-6);
   background: var(--color-white);
   border-bottom: 1px solid var(--color-gray-200);
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.logo {
+  color: var(--color-primary);
+}
+
+.brandName {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.headerCenter {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-gray-600);
+  font-size: var(--font-size-sm);
 }
 
 .header h1 {
@@ -21,6 +109,40 @@
   color: var(--color-gray-900);
 }
 
+/* Chat Layout for Patient Dashboard */
+.mainContent {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+  overflow: hidden;
+}
+
+.rightPanel {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--color-white);
+  overflow: hidden;
+}
+
+.chatMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-4);
+  overflow: hidden;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Standard Layout for Clinician Dashboard */
 .main {
   max-width: 800px;
   margin: 0 auto;
@@ -82,4 +204,40 @@
 
 .info strong {
   color: var(--color-gray-800);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .header {
+    padding: var(--spacing-3) var(--spacing-4);
+  }
+  
+  .brandName {
+    display: none;
+  }
+  
+  .headerCenter {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .chatMain {
+    padding: var(--spacing-2);
+  }
+  
+  .sidebar {
+    width: 240px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    position: absolute;
+    left: 0;
+    top: 56px;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: var(--shadow-lg);
+  }
 }

@@ -1,0 +1,249 @@
+/* Health Profile Panel Styles */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-white);
+  border-left: 1px solid var(--color-gray-200);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.header h3 {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-gray-800);
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-gray-400);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-600);
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-4);
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8);
+  color: var(--color-gray-500);
+  gap: var(--spacing-3);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Empty State */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-8) var(--spacing-4);
+  text-align: center;
+  color: var(--color-gray-400);
+}
+
+.empty p {
+  margin-top: var(--spacing-3);
+  font-weight: 500;
+  color: var(--color-gray-600);
+}
+
+.empty span {
+  font-size: var(--font-size-sm);
+}
+
+/* Error State */
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-6);
+  text-align: center;
+  color: var(--color-error);
+}
+
+.error span {
+  font-size: var(--font-size-sm);
+}
+
+/* Section Styles */
+.section {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-3);
+  background: var(--color-gray-50);
+  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--color-gray-300);
+}
+
+.section.primary {
+  background: var(--color-primary-light);
+  border-left-color: var(--color-primary);
+}
+
+.section.warning {
+  background: var(--color-warning-light);
+  border-left-color: var(--color-warning);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-2);
+}
+
+.sectionIcon {
+  color: var(--color-gray-500);
+}
+
+.section.primary .sectionIcon {
+  color: var(--color-primary);
+}
+
+.section.warning .sectionIcon {
+  color: var(--color-warning);
+}
+
+.sectionHeader h4 {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-gray-700);
+  margin: 0;
+}
+
+.sectionList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sectionItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-2);
+  padding: var(--spacing-1) 0;
+}
+
+.itemBullet {
+  flex-shrink: 0;
+  color: var(--color-gray-400);
+  margin-top: 2px;
+}
+
+.itemContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.itemValue {
+  font-size: var(--font-size-sm);
+  color: var(--color-gray-700);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  flex-wrap: wrap;
+}
+
+.itemTimeline {
+  font-size: var(--font-size-xs);
+  color: var(--color-gray-500);
+  font-style: italic;
+}
+
+/* Inactive/stopped items */
+.sectionItem.inactive {
+  opacity: 0.7;
+}
+
+.sectionItem.inactive .itemValue {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-gray-400);
+}
+
+/* Status badges */
+.statusBadge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.statusBadge[data-status="stopped"] {
+  background: var(--color-gray-200);
+  color: var(--color-gray-600);
+}
+
+.statusBadge[data-status="resolved"] {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.statusBadge[data-status="corrected"] {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+/* Provenance info - shows data lineage */
+.itemProvenance {
+  display: block;
+  font-size: 10px;
+  color: var(--color-gray-400);
+  margin-top: 2px;
+}
+
+.provenanceLink {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.provenanceLink:hover {
+  color: var(--color-primary-dark);
+}

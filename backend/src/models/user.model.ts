@@ -16,6 +16,9 @@ import { User, UserPublic, RegisterRequest, UserRole } from '../types';
 import { hashPassword } from '../utils';
 import { v4 as uuidv4 } from 'uuid';
 
+// Default clinic ID for all users (demo clinic)
+const DEFAULT_CLINIC_ID = '00000000-0000-0000-0000-000000000001';
+
 /**
  * Convert database row to UserPublic (removes password_hash)
  */
@@ -58,7 +61,7 @@ export async function createUser(data: RegisterRequest): Promise<UserPublic> {
     data.last_name,
     data.date_of_birth,
     data.gender,
-    data.clinic_id || null,
+    data.clinic_id || DEFAULT_CLINIC_ID, // Default to demo clinic
   ];
   
   const result = await query<User>(sql, params);

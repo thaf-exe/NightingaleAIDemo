@@ -41,8 +41,12 @@ export type AuditEventType =
   | 'resource.delete'
   // Escalation events
   | 'escalation.created'
+  | 'escalation.create'
   | 'escalation.viewed'
   | 'escalation.responded'
+  | 'escalation.reply'
+  | 'escalation.status_change'
+  | 'escalation.resolve'
   // System events
   | 'system.error'
   | 'system.phi_redaction';
