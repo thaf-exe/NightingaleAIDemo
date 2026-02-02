@@ -390,4 +390,89 @@ export async function resolveEscalation(
   }
 }
 
+// =============================================
+// VOICE API
+// =============================================
+
+export interface VoiceChatResponse {
+  conversation_id: string;
+  transcript: string;
+  patient_message: {
+    id: string;
+    content: string;
+    created_at: string;
+  };
+  ai_message: {
+    id: string;
+    content: string;
+    citations?: string[];
+    created_at: string;
+  };
+  audio: string; // Base64 encoded MP3
+  risk_assessment?: {
+    level: 'low' | 'medium' | 'high';
+    reason?: string;
+    confidence?: 'low' | 'medium' | 'high';
+  };
+  escalation_warning?: {
+    level: 'low' | 'medium' | 'high';
+    message: string;
+  };
+}
+
+/**
+ * Send audio for voice chat - returns transcript, AI response, and audio
+ */
+export async function sendVoiceMessage(
+  audioBlob: Blob,
+  conversationId?: string
+): Promise<VoiceChatResponse> {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'recording.webm');
+  if (conversationId) {
+    formData.append('conversation_id', conversationId);
+  }
+
+  const response = await api.post<ApiResponse<VoiceChatResponse>>('/voice/chat', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to process voice message');
+  }
+  return response.data.data;
+}
+
+/**
+ * Transcribe audio to text only
+ */
+export async function transcribeAudio(audioBlob: Blob): Promise<string> {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'recording.webm');
+
+  const response = await api.post<ApiResponse<{ text: string }>>('/voice/transcribe', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  if (!response.data.success || !response.data.data) {
+    throw new Error(response.data.error?.message || 'Failed to transcribe audio');
+  }
+  return response.data.data.text;
+}
+
+/**
+ * Convert text to speech - returns audio blob
+ */
+export async function synthesizeSpeech(text: string): Promise<Blob> {
+  const response = await api.post('/voice/synthesize', { text }, {
+    responseType: 'blob',
+  });
+  return response.data;
+}
+
 export default api;
+

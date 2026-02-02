@@ -22,6 +22,27 @@ import type { ChatContext } from '../types/chat.types';
 const router = Router();
 
 /**
+ * Detect if response includes "consult clinician" nudge
+ */
+function hasClinicianNudge(content: string): boolean {
+  const nudgeKeywords = [
+    "your clinician",
+    "your doctor",
+    "healthcare provider",
+    "check with",
+    "run this by",
+    "consult",
+    "talk to your",
+    "definitely run",
+    "ask your",
+    "worth checking",
+  ];
+  
+  const lowerContent = content.toLowerCase();
+  return nudgeKeywords.some(keyword => lowerContent.includes(keyword));
+}
+
+/**
  * POST /api/chat/message
  * 
  * Send a message and get AI response
@@ -123,10 +144,14 @@ router.post('/message', requireAuth, requireRole(['patient']), async (req: Reque
       patient_name: `${user.first_name} ${user.last_name}`,
       patient_memory: patientMemory,
       recent_messages: recentMessages,
+      knownNames: [`${user.first_name} ${user.last_name}`, user.first_name, user.last_name], // For PHI redaction
     };
 
     // Generate AI response first so we can include risk assessment with patient message
     const aiResponse = await groqService.generateResponse(content.trim(), context);
+
+    // Check if response includes clinician nudge (keywords suggest it should be recommended)
+    const includesClinicianNudge = hasClinicianNudge(aiResponse.content);
 
     // Save patient message (with risk assessment if present)
     const patientMessage = await chatModel.createMessage(
@@ -141,7 +166,7 @@ router.post('/message', requireAuth, requireRole(['patient']), async (req: Reque
       } : undefined
     );
 
-    // Save AI response
+    // Save AI response with citations and clinician nudge indicator
     const aiMessage = await chatModel.createMessage(
       conversation.id,
       'ai',
@@ -149,6 +174,7 @@ router.post('/message', requireAuth, requireRole(['patient']), async (req: Reque
       aiResponse.content,
       {
         aiConfidence: aiResponse.confidence,
+        aiCitations: aiResponse.citations ? { citations: aiResponse.citations } : undefined,
       }
     );
 
@@ -193,12 +219,16 @@ router.post('/message', requireAuth, requireRole(['patient']), async (req: Reque
         patient_message: {
           id: patientMessage.id,
           content: patientMessage.content,
+          risk_level: patientMessage.risk_level,
+          risk_reason: patientMessage.risk_reason,
+          risk_confidence: patientMessage.risk_confidence,
           created_at: patientMessage.created_at,
         },
         ai_message: {
           id: aiMessage.id,
           content: aiMessage.content,
           confidence: aiResponse.confidence,
+          citations: aiResponse.citations,
           created_at: aiMessage.created_at,
         },
         risk_assessment: aiResponse.risk_assessment,

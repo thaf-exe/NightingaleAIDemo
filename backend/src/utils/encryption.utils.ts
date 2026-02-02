@@ -16,6 +16,7 @@
  */
 
 import crypto from 'crypto';
+import { logWarning } from './logger.utils';
 
 // Algorithm to use
 const ALGORITHM = 'aes-256-gcm';
@@ -84,7 +85,12 @@ export function decrypt(encryptedData: string): string {
   if (parts.length !== 3) {
     // Not encrypted with our format - return as-is (legacy data)
     // This handles old unencrypted messages in the database
-    console.warn('Decrypting legacy unencrypted data');
+    logWarning(
+      'encryption.legacy_data',
+      'Decrypting legacy unencrypted data',
+      undefined,
+      { dataLength: encryptedData.length }
+    );
     return encryptedData;
   }
   
@@ -108,7 +114,12 @@ export function decrypt(encryptedData: string): string {
     return decrypted;
   } catch (error) {
     // If decryption fails, it might be legacy plain text that happens to have colons
-    console.warn('Decryption failed, returning as plain text:', error);
+    logWarning(
+      'encryption.decryption_failed',
+      'Decryption failed, returning as plain text',
+      undefined,
+      { error: error instanceof Error ? error.message : 'Unknown error' }
+    );
     return encryptedData;
   }
 }

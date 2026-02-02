@@ -103,6 +103,8 @@ export interface Message {
   content: string;
   risk_level?: RiskLevel;
   risk_reason?: string;
+  risk_confidence?: ConfidenceLevel;
+  ai_citations?: string[]; // For AI messages
   created_at: string;
 }
 
@@ -111,12 +113,16 @@ export interface ChatResponse {
   patient_message: {
     id: string;
     content: string;
+    risk_level?: RiskLevel;
+    risk_reason?: string;
+    risk_confidence?: ConfidenceLevel;
     created_at: string;
   };
   ai_message: {
     id: string;
     content: string;
     confidence: ConfidenceLevel;
+    citations?: string[];
     created_at: string;
   };
   risk_assessment?: {

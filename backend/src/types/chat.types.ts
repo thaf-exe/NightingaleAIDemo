@@ -43,7 +43,8 @@ export interface Message {
   
   // AI metadata (for AI messages)
   ai_confidence?: ConfidenceLevel;
-  ai_citations?: Record<string, unknown>;
+  ai_citations?: Record<string, unknown>; // What the AI cited (e.g., their health profile, previous messages)
+  ai_includes_clinician_nudge?: boolean; // Whether response includes "consult your clinician" guidance
   
   created_at: Date;
 }
@@ -63,6 +64,7 @@ export interface MessageRow {
   risk_assessed_at: Date | null;
   ai_confidence: ConfidenceLevel | null;
   ai_citations: Record<string, unknown> | null;
+  ai_includes_clinician_nudge: boolean | null;
   created_at: Date;
 }
 
@@ -87,6 +89,7 @@ export interface AIResponse {
     should_escalate: boolean;
   };
   extracted_facts?: ExtractedFact[];
+  citations?: string[]; // What the response cites: [their health profile], [previous message], etc.
 }
 
 /**
@@ -125,7 +128,6 @@ export interface ChatContext {
   patient_name: string;
   patient_memory: PatientMemory[];
   recent_messages: Array<{
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'system';
     content: string;
-  }>;
-}
+  }>;  knownNames?: string[]; // Names to redact before sending to LLM (for PHI protection)}

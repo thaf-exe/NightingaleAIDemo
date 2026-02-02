@@ -15,6 +15,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AuthenticatedRequest, UserRole } from '../types';
 import { getUserFromToken, verifyToken } from '../services/auth.service';
 import { logAccessDenied, logAuthEvent } from '../models/audit.model';
+import { logError, createRequestContext } from '../utils/logger.utils';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -112,7 +113,12 @@ export async function requireAuth(
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    logError(
+      'auth.middleware_error',
+      'Authentication middleware encountered an error',
+      error,
+      createRequestContext(req.requestId, undefined, undefined, undefined, getClientIp(req))
+    );
     res.status(500).json({
       success: false,
       error: {

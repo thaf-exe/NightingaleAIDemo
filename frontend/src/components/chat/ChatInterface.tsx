@@ -5,7 +5,8 @@
  * Features:
  * - Message display with different styles for user/AI/clinician
  * - Input field with send button
- * - Voice mode for conversational AI (speak and listen)
+ * - Voice mode for conversational AI (Siri-like: speak and it speaks back)
+ * - Uses Groq Whisper for speech-to-text and Google TTS for text-to-speech
  * - Loading state while waiting for AI
  * - Scroll to bottom on new messages
  * - Risk level warnings with "Send to Nurse" action
@@ -13,7 +14,7 @@
  */
 
 import { useState, useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
-import { Send, AlertTriangle, Loader2, UserRound, Stethoscope, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Send, AlertTriangle, Loader2, UserRound, Stethoscope, Mic, MicOff, Phone, PhoneOff } from 'lucide-react';
 import { Button } from '../ui';
 import { 
   sendMessage as sendMessageApi, 
@@ -21,9 +22,11 @@ import {
   getActiveConversation,
   createEscalation,
   pollClinicianReplies,
-  getEscalationStatus
+  getEscalationStatus,
+  sendVoiceMessage,
+  synthesizeSpeech
 } from '../../services/api';
-import { useSpeechRecognition, useSpeechSynthesis } from '../../hooks';
+import { useAudioRecorder } from '../../hooks';
 import type { Message, ChatResponse, RiskLevel, Escalation } from '../../types';
 import styles from './ChatInterface.module.css';
 
@@ -56,26 +59,21 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
   
   // Voice mode state
   const [voiceModeEnabled, setVoiceModeEnabled] = useState(false);
-  const [autoSpeak, setAutoSpeak] = useState(true);
+  const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   
-  // Voice hooks
+  // Audio recorder hook (for real API-based voice)
   const {
-    isListening,
-    transcript,
-    interimTranscript,
-    error: speechError,
-    isSupported: speechRecognitionSupported,
-    startListening,
-    stopListening,
-    resetTranscript,
-  } = useSpeechRecognition();
+    isRecording,
+    error: recordingError,
+    startRecording,
+    stopRecording,
+    cancelRecording,
+  } = useAudioRecorder();
   
-  const {
-    isSpeaking,
-    isSupported: speechSynthesisSupported,
-    speak,
-    cancel: cancelSpeech,
-  } = useSpeechSynthesis();
+  // Audio player ref for TTS playback
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -95,12 +93,57 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
     },
   }));
 
-  // Update input value when transcript changes (voice mode)
-  useEffect(() => {
-    if (voiceModeEnabled && transcript) {
-      setInputValue(transcript);
+  // Play audio from base64 data or Blob
+  const playAudio = useCallback(async (audioData: string | Blob) => {
+    try {
+      setIsSpeaking(true);
+      
+      // Create audio element if not exists
+      if (!audioPlayerRef.current) {
+        audioPlayerRef.current = new Audio();
+      }
+      
+      let audioUrl: string;
+      
+      if (typeof audioData === 'string') {
+        // Base64 string - convert to blob
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(audioData), c => c.charCodeAt(0))],
+          { type: 'audio/mp3' }
+        );
+        audioUrl = URL.createObjectURL(audioBlob);
+      } else {
+        // Already a Blob
+        audioUrl = URL.createObjectURL(audioData);
+      }
+      
+      audioPlayerRef.current.src = audioUrl;
+      audioPlayerRef.current.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      audioPlayerRef.current.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        setVoiceError('Failed to play audio response');
+      };
+      
+      await audioPlayerRef.current.play();
+    } catch (err) {
+      console.error('Failed to play audio:', err);
+      setIsSpeaking(false);
+      setVoiceError('Failed to play audio response');
     }
-  }, [voiceModeEnabled, transcript]);
+  }, []);
+
+  // Stop audio playback
+  const stopSpeaking = useCallback(() => {
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+    setIsSpeaking(false);
+  }, []);
 
   // Poll for clinician replies when conversation is escalated
   const pollForReplies = useCallback(async () => {
@@ -234,11 +277,6 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
     setInputValue('');
     setError(null);
     setIsLoading(true);
-    
-    // Reset transcript if using voice mode
-    if (voiceModeEnabled) {
-      resetTranscript();
-    }
 
     // Optimistically add user message
     const tempUserMessage: Message = {
@@ -271,7 +309,9 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
             sender_type: 'patient' as const,
             sender_id: null,
             content: response.patient_message.content,
-            risk_level: response.risk_assessment?.level,
+            risk_level: response.patient_message.risk_level,
+            risk_reason: response.patient_message.risk_reason,
+            risk_confidence: response.patient_message.risk_confidence,
             created_at: response.patient_message.created_at,
           },
           {
@@ -280,14 +320,20 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
             sender_type: 'ai' as const,
             sender_id: null,
             content: response.ai_message.content,
+            ai_citations: response.ai_message.citations,
             created_at: response.ai_message.created_at,
           },
         ];
       });
 
       // Speak AI response if voice mode is enabled
-      if (voiceModeEnabled && autoSpeak && response.ai_message.content) {
-        speak(response.ai_message.content);
+      if (voiceModeEnabled && response.ai_message.content) {
+        try {
+          const audioBlob = await synthesizeSpeech(response.ai_message.content);
+          playAudio(audioBlob);
+        } catch (err) {
+          console.error('Failed to synthesize speech:', err);
+        }
       }
 
       // Handle escalation warning
@@ -307,17 +353,74 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
     }
   }
 
-  // Handle voice input - start/stop listening
-  function handleVoiceToggle() {
-    if (isListening) {
-      stopListening();
-      // Auto-send after stopping if there's content
-      if (transcript.trim()) {
-        setTimeout(() => handleSend(), 100);
+  // Handle voice input - start/stop recording and send to API
+  async function handleVoiceToggle() {
+    setVoiceError(null);
+    
+    if (isRecording) {
+      // Stop recording and send to API
+      const audioBlob = await stopRecording();
+      if (!audioBlob) return;
+      
+      setIsProcessingVoice(true);
+      
+      try {
+        // Send voice message for full voice chat (transcribe → AI → TTS)
+        const response = await sendVoiceMessage(audioBlob, currentConversationId);
+        
+        // Update conversation ID if this was a new conversation
+        if (!currentConversationId && response.conversation_id) {
+          setCurrentConversationId(response.conversation_id);
+          onConversationStart?.(response.conversation_id);
+        }
+        
+        // Add both messages to the chat
+        setMessages(prev => [
+          ...prev,
+          {
+            id: response.patient_message.id,
+            conversation_id: response.conversation_id,
+            sender_type: 'patient' as const,
+            sender_id: null,
+            content: response.patient_message.content,
+            risk_level: response.risk_assessment?.level,
+            risk_reason: response.risk_assessment?.reason,
+            risk_confidence: response.risk_assessment?.confidence,
+            created_at: response.patient_message.created_at,
+          },
+          {
+            id: response.ai_message.id,
+            conversation_id: response.conversation_id,
+            sender_type: 'ai' as const,
+            sender_id: null,
+            content: response.ai_message.content,
+            ai_citations: response.ai_message.citations,
+            created_at: response.ai_message.created_at,
+          },
+        ]);
+        
+        // Play AI audio response
+        if (response.audio) {
+          playAudio(response.audio);
+        }
+        
+        // Handle escalation warning
+        if (response.escalation_warning) {
+          setEscalationWarning(response.escalation_warning);
+        }
+        
+        // Notify parent that message was sent
+        onMessageSent?.();
+      } catch (err) {
+        console.error('Voice chat error:', err);
+        setVoiceError(err instanceof Error ? err.message : 'Failed to process voice message');
+      } finally {
+        setIsProcessingVoice(false);
       }
     } else {
-      cancelSpeech(); // Stop any ongoing speech before listening
-      startListening();
+      // Start recording
+      stopSpeaking(); // Stop any ongoing playback before recording
+      await startRecording();
     }
   }
 
@@ -365,6 +468,30 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
       default: return '';
     }
   }
+
+  function getCitationTooltip(citation: string): string {
+    const lowerCitation = citation.toLowerCase();
+    
+    if (lowerCitation.includes('health profile') || lowerCitation.includes('your profile')) {
+      return 'This information comes from your stored health profile, which includes symptoms, medications, allergies, and conditions you\'ve previously mentioned.';
+    }
+    
+    if (lowerCitation.includes('previous message') || lowerCitation.includes('earlier') || lowerCitation.includes('before')) {
+      return 'This references something you mentioned earlier in this conversation. The AI is connecting information from your previous messages.';
+    }
+    
+    if (lowerCitation.includes('clinician') || lowerCitation.includes('doctor')) {
+      return 'This refers to guidance or instructions provided by your healthcare provider, which takes priority over general suggestions.';
+    }
+    
+    if (lowerCitation.includes('conversation') || lowerCitation.includes('chat')) {
+      return 'This is based on the context of your ongoing conversation and the topics discussed so far.';
+    }
+    
+    // Default tooltip
+    return `Source: ${citation}. Hover to see where this information came from. All citations are tracked for accuracy and transparency.`;
+  }
+
 
   return (
     <div className={styles.container}>
@@ -415,6 +542,46 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
             <div className={styles.messageContent}>
               {message.content}
             </div>
+            
+            {/* Risk Assessment Info (for patient messages) */}
+            {message.risk_level && (
+              <div className={styles.riskInfo}>
+                <span className={styles.riskBadge}>
+                  Risk: {message.risk_level.toUpperCase()}
+                </span>
+                {message.risk_reason && (
+                  <span className={styles.riskReason}>{message.risk_reason}</span>
+                )}
+                {message.risk_confidence && (
+                  <span className={styles.riskConfidence}>
+                    Confidence: {message.risk_confidence}
+                  </span>
+                )}
+              </div>
+            )}
+            
+            {/* Citations (for AI messages) */}
+            {message.ai_citations && message.ai_citations.length > 0 && (
+              <div className={styles.citations}>
+                <div className={styles.citationsLabel}>Sources:</div>
+                {message.ai_citations.map((citation, idx) => {
+                  // Generate tooltip text based on citation type
+                  const tooltipText = getCitationTooltip(citation);
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={styles.citation}
+                      title={tooltipText}
+                      data-tooltip={tooltipText}
+                    >
+                      [{citation}]
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
             <div className={styles.messageTime}>
               {new Date(message.created_at).toLocaleTimeString([], {
                 hour: '2-digit',
@@ -489,52 +656,49 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
         </div>
       )}
       
-      {/* Speech Recognition Error */}
-      {speechError && (
+      {/* Voice/Recording Error */}
+      {(voiceError || recordingError) && (
         <div className={styles.error}>
-          <p>{speechError}</p>
+          <p>{voiceError || recordingError}</p>
+          <button onClick={() => setVoiceError(null)}>×</button>
         </div>
       )}
 
       {/* Voice Mode Toggle */}
-      {speechRecognitionSupported && (
-        <div className={styles.voiceModeBar}>
-          <button
-            className={`${styles.voiceModeToggle} ${voiceModeEnabled ? styles.active : ''}`}
-            onClick={() => {
-              setVoiceModeEnabled(!voiceModeEnabled);
-              if (!voiceModeEnabled) {
-                cancelSpeech();
-                stopListening();
-              }
-            }}
-          >
-            {voiceModeEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            <span>Voice Mode {voiceModeEnabled ? 'ON' : 'OFF'}</span>
+      <div className={styles.voiceModeBar}>
+        <button
+          className={`${styles.voiceModeToggle} ${voiceModeEnabled ? styles.active : ''}`}
+          onClick={() => {
+            const newState = !voiceModeEnabled;
+            setVoiceModeEnabled(newState);
+            if (!newState) {
+              stopSpeaking();
+              if (isRecording) cancelRecording();
+            }
+          }}
+        >
+          {voiceModeEnabled ? <Phone size={16} /> : <PhoneOff size={16} />}
+          <span>Voice Chat {voiceModeEnabled ? 'ON' : 'OFF'}</span>
+        </button>
+        {isSpeaking && (
+          <button className={styles.stopSpeaking} onClick={stopSpeaking}>
+            Stop Speaking
           </button>
-          {voiceModeEnabled && speechSynthesisSupported && (
-            <label className={styles.autoSpeakToggle}>
-              <input 
-                type="checkbox" 
-                checked={autoSpeak} 
-                onChange={(e) => setAutoSpeak(e.target.checked)} 
-              />
-              <span>Auto-speak responses</span>
-            </label>
-          )}
-          {isSpeaking && (
-            <button className={styles.stopSpeaking} onClick={cancelSpeech}>
-              Stop Speaking
-            </button>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Voice Input Indicator */}
-      {isListening && (
+      {/* Voice Recording/Processing Indicator */}
+      {isRecording && (
         <div className={styles.listeningIndicator}>
           <div className={styles.listeningPulse} />
-          <span>Listening... {interimTranscript && `"${interimTranscript}"`}</span>
+          <span>Recording... Tap mic to send</span>
+        </div>
+      )}
+      
+      {isProcessingVoice && (
+        <div className={styles.listeningIndicator}>
+          <Loader2 className={styles.spinner} size={16} />
+          <span>Processing voice...</span>
         </div>
       )}
 
@@ -544,7 +708,7 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
         const isAwaitingClinicianResponse = !!(escalationStatus 
           && escalationStatus.status !== 'resolved' 
           && !hasClinicianReplied);
-        const inputDisabled = isLoading || isAwaitingClinicianResponse;
+        const inputDisabled = isLoading || isProcessingVoice || isAwaitingClinicianResponse;
         const placeholder = isAwaitingClinicianResponse 
           ? "Waiting for clinician response..." 
           : voiceModeEnabled 
@@ -554,14 +718,14 @@ export const ChatInterface = forwardRef<ChatInterfaceHandle, ChatInterfaceProps>
         return (
           <div className={`${styles.inputContainer} ${isAwaitingClinicianResponse ? styles.inputDisabled : ''}`}>
             {/* Voice Input Button */}
-            {voiceModeEnabled && speechRecognitionSupported && (
+            {voiceModeEnabled && (
               <Button
                 onClick={handleVoiceToggle}
-                disabled={inputDisabled || isLoading}
-                className={`${styles.voiceButton} ${isListening ? styles.listening : ''}`}
-                aria-label={isListening ? "Stop listening" : "Start voice input"}
+                disabled={inputDisabled}
+                className={`${styles.voiceButton} ${isRecording ? styles.listening : ''}`}
+                aria-label={isRecording ? "Stop recording and send" : "Start voice input"}
               >
-                {isListening ? (
+                {isRecording ? (
                   <MicOff size={20} />
                 ) : (
                   <Mic size={20} />

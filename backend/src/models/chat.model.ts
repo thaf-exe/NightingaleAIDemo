@@ -195,13 +195,22 @@ export async function getConversationMessages(
 export async function getRecentMessages(
   conversationId: string,
   limit = 10
-): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> {
+): Promise<Array<{ role: 'user' | 'assistant' | 'system'; content: string }>> {
   const messages = await getConversationMessages(conversationId, limit);
   
-  return messages.map(msg => ({
-    role: msg.sender_type === 'patient' ? 'user' as const : 'assistant' as const,
-    content: msg.content,
-  }));
+  return messages.map(msg => {
+    if (msg.sender_type === 'patient') {
+      return { role: 'user' as const, content: msg.content };
+    } else if (msg.sender_type === 'clinician') {
+      // Clinician messages are ground truth - map to system role with clear prefix
+      return { 
+        role: 'system' as const, 
+        content: `CLINICIAN GUIDANCE: ${msg.content}` 
+      };
+    } else {
+      return { role: 'assistant' as const, content: msg.content };
+    }
+  });
 }
 
 /**

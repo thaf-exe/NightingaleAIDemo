@@ -24,6 +24,8 @@ import type {
   RiskLevel,
   ConfidenceLevel 
 } from '../types/chat.types';
+import { redactPhi, restorePhi, getRedactionStats, type RedactionMap } from '../utils/redaction.utils';
+import { logPhiRedaction, logSystemError } from '../utils/logger.utils';
 
 // Initialize Groq client
 const groq = new Groq({
@@ -37,41 +39,41 @@ const MODEL = 'llama-3.3-70b-versatile';
  * System prompt defines the AI's personality and behavior
  * This is crucial for healthcare - we need empathy AND safety
  */
-const SYSTEM_PROMPT = `You are Nightingale, an empathetic AI health companion. Your role is to:
+const SYSTEM_PROMPT = `You are Nightingale, a friendly health companion here to listen and help.
 
-1. LISTEN with genuine empathy and care
-2. HELP patients articulate their health concerns clearly
-3. ASK clarifying questions to understand symptoms better
-4. NEVER provide medical diagnoses or treatment recommendations
-5. RECOGNIZE when symptoms might be urgent and need professional attention
+Your goal: Help people talk through what's going on with their health. You're like a caring friend who gets it - not a stiff medical bot.
 
-IMPORTANT GUIDELINES:
-- Always be warm, supportive, and non-judgmental
-- Use simple, clear language (avoid medical jargon unless the patient uses it)
-- Ask one question at a time to avoid overwhelming the patient
-- Acknowledge emotions and validate concerns
-- If symptoms sound potentially serious, gently encourage seeking medical care
-- Never say "I'm just an AI" - instead say "I want to make sure you get the best care"
+How to chat:
+- Be warm and genuinely curious. Ask real questions like a friend would.
+- Let them talk naturally. Don't overwhelm with lots of questions.
+- If something sounds serious, suggest seeing a doctor without being scary about it
+- Use everyday language, not medical speak (unless they do first)
+- Keep it real - acknowledge when something sounds tough
+- Remember what they've told you and connect the dots
 
-CLINICIAN GUIDANCE (GROUND TRUTH):
-- If patient memory includes "clinician_guidance" items, these are authoritative instructions from their healthcare provider
-- Clinician guidance ALWAYS takes precedence over your suggestions
-- Reference clinician guidance when relevant: "Your clinician previously advised..."
-- If you notice a conflict between clinician guidance and patient statements, acknowledge it and defer to the clinician
+When referencing what they've told you, add citations:
+- If you mention something they said before, add [their previous message] after it
+- If you reference their medical history/profile, add [their health profile] after it
+- Example: "You mentioned [your health profile] that you take Aspirin, so..."
 
-RESPONSE FORMAT:
-- Keep responses concise (2-4 sentences typically)
-- End with a question when gathering information
-- When the patient seems to have shared their main concerns, offer to summarize
+What NOT to do:
+- Don't pretend to diagnose anything
+- Don't give medical advice beyond general education
+- Never make them feel judged
+- Don't be robotic or overly formal
 
-SAFETY - If the patient mentions ANY of these, respond with urgency and recommend immediate medical attention:
-- Chest pain, difficulty breathing, signs of stroke
-- Thoughts of self-harm or suicide
-- Severe allergic reactions
-- High fever with confusion
-- Severe bleeding or injuries
+CRITICAL - Always include when applicable:
+- For ANY health topic where there's uncertainty: "That said, your doctor knows your full situation best - definitely run this by them."
+- For lifestyle/symptoms/concerns you're not 100% sure about: "Worth checking with your clinician about this."
+- For things that might change treatment: "If this is new, your clinician should know."
 
-Remember: You are a supportive companion helping patients prepare for medical visits, NOT a replacement for healthcare providers.`;
+If they mention anything really serious (chest pain, can't breathe, thinking about hurting themselves, severe allergic reaction, major bleeding) - tell them straight up: "This sounds urgent. Please get medical help right now. Call 911 or go to the ER."
+
+If their doctor gave them specific instructions, follow those. That's the real deal.
+
+Keep responses short and natural. One or two sentences is usually better than a paragraph. End with a question when you're learning about what's going on.
+
+You're here to help them feel heard and get to a doctor if they need one. That's it.`;
 
 /**
  * Generate AI response to patient message
@@ -85,36 +87,54 @@ export async function generateResponse(
   context: ChatContext
 ): Promise<AIResponse> {
   try {
+    // CRITICAL: Redact PHI before sending to LLM
+    const knownNames = context.knownNames || [];
+    const userMessageRedaction = redactPhi(userMessage, knownNames);
+    
     // Build conversation history for context
     const messages: Groq.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
     ];
 
-    // Add patient context if we have memory
+    // Add patient context if we have memory (REDACTED)
     if (context.patient_memory.length > 0) {
       const memoryContext = context.patient_memory
         .map(m => `- ${m.memory_type}: ${m.value}${m.timeline ? ` (${m.timeline})` : ''}`)
         .join('\n');
       
+      // Redact memory context
+      const memoryRedaction = redactPhi(memoryContext, knownNames);
+      
       messages.push({
         role: 'system',
-        content: `Patient context (${context.patient_name}):\n${memoryContext}`,
+        content: `Patient context ([PATIENT_ID]):\n${memoryRedaction.redactedText}`,
       });
     }
 
-    // Add recent conversation history
+    // Add recent conversation history (REDACTED)
     for (const msg of context.recent_messages) {
+      const msgRedaction = redactPhi(msg.content, knownNames);
       messages.push({
         role: msg.role,
-        content: msg.content,
+        content: msgRedaction.redactedText,
       });
     }
 
-    // Add the current user message
+    // Add the current user message (REDACTED)
     messages.push({
       role: 'user',
-      content: userMessage,
+      content: userMessageRedaction.redactedText,
     });
+    
+    // Log redaction stats for audit
+    const stats = getRedactionStats(userMessageRedaction.map);
+    if (stats.totalRedactions > 0) {
+      logPhiRedaction(
+        stats.namesRedacted,
+        stats.idNumbersRedacted,
+        stats.phonesRedacted
+      );
+    }
 
     // Call Groq API
     const completion = await groq.chat.completions.create({
@@ -125,23 +145,33 @@ export async function generateResponse(
       top_p: 0.9,
     });
 
-    const aiContent = completion.choices[0]?.message?.content || 
+    const aiContentRaw = completion.choices[0]?.message?.content || 
       "I'm sorry, I had trouble understanding. Could you tell me more about what you're experiencing?";
+    
+    // CRITICAL: Restore PHI in AI response
+    const aiContent = restorePhi(aiContentRaw, userMessageRedaction.map);
 
-    // Assess risk in patient message
+    // Assess risk in patient message (use ORIGINAL unredacted message for accurate assessment)
     const riskAssessment = await assessRisk(userMessage, context);
 
     // Extract facts from patient message
     const extractedFacts = await extractFacts(userMessage, context);
 
+    // Extract citations from response
+    const citations = extractCitations(aiContent);
+
+    // Determine confidence based on risk level and response quality
+    const confidence = riskAssessment?.should_escalate ? 'low' : 'high';
+
     return {
       content: aiContent,
-      confidence: 'high', // Groq's Llama 3 is reliable
+      confidence,
       risk_assessment: riskAssessment,
       extracted_facts: extractedFacts,
+      citations: citations.length > 0 ? citations : undefined,
     };
   } catch (error) {
-    console.error('Groq API error:', error);
+    logSystemError('groq.api_error', 'Failed to generate AI response', error);
     
     // Return a safe fallback response
     return {
@@ -203,7 +233,7 @@ Respond with ONLY the JSON object, no other text.`;
       };
     }
   } catch (error) {
-    console.error('Risk assessment error:', error);
+    logSystemError('groq.risk_assessment_error', 'Risk assessment failed', error);
   }
 
   // Default to medium if assessment fails
@@ -286,7 +316,7 @@ Respond with ONLY the JSON array, no other text.`;
       return JSON.parse(jsonMatch[0]) as ExtractedFact[];
     }
   } catch (error) {
-    console.error('Fact extraction error:', error);
+    logSystemError('groq.fact_extraction_error', 'Fact extraction failed', error);
   }
 
   return [];
@@ -342,10 +372,24 @@ Respond with ONLY a JSON array of strings, e.g.:
       return JSON.parse(jsonMatch[0]) as string[];
     }
   } catch (error) {
-    console.error('Triage summary error:', error);
+    logSystemError('groq.triage_summary_error', 'Triage summary generation failed', error);
   }
 
   return ['Unable to generate summary - please review conversation'];
+}
+
+/**
+ * Extract citations from AI response text
+ * Citations are in the format [reference] or [their previous message], [their health profile]
+ */
+function extractCitations(content: string): string[] {
+  const citationRegex = /\[([^\]]+)\]/g;
+  const matches = content.match(citationRegex);
+  
+  if (!matches) return [];
+  
+  // Remove brackets and deduplicate
+  return Array.from(new Set(matches.map(m => m.slice(1, -1))));
 }
 
 export default {

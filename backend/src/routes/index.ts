@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes';
 import chatRoutes from './chat.routes';
 import escalationRoutes from './escalation.routes';
+import voiceRoutes from './voice.routes';
 
 const router = Router();
 
@@ -9,6 +10,7 @@ const router = Router();
 router.use('/auth', authRoutes);
 router.use('/chat', chatRoutes);
 router.use('/escalations', escalationRoutes);
+router.use('/voice', voiceRoutes);
 
 // Health check endpoint
 router.get('/health', (req, res) => {
