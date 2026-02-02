@@ -1,21 +1,3 @@
-/**
- * Groq AI Service
- * 
- * WHAT IS GROQ?
- * Groq is an AI inference company that provides extremely fast
- * LLM (Large Language Model) APIs. They're known for:
- * - Very low latency (responses in milliseconds!)
- * - High throughput
- * - Competitive pricing
- * 
- * We use Groq to power Nightingale's conversational AI.
- * The AI helps patients articulate health concerns and
- * provides empathetic, supportive responses.
- * 
- * IMPORTANT: The AI does NOT provide medical diagnoses!
- * It helps gather information and knows when to escalate.
- */
-
 import Groq from 'groq-sdk';
 import type { 
   AIResponse, 
@@ -32,13 +14,10 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
 });
 
-// Model to use - Llama 3 is excellent for healthcare conversations
+
 const MODEL = 'llama-3.3-70b-versatile';
 
-/**
- * System prompt defines the AI's personality and behavior
- * This is crucial for healthcare - we need empathy AND safety
- */
+
 const SYSTEM_PROMPT = `You are Nightingale, a friendly health companion here to listen and help.
 
 Your goal: Help people talk through what's going on with their health. You're like a caring friend who gets it - not a stiff medical bot.
